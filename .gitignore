@@ -30,3 +30,5 @@ node_modules
 *.jar
 target
 projectFilesBackup*
+.idea
+.idea_modules
