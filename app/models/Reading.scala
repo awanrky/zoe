@@ -10,7 +10,6 @@ package models
     id: Long,
     value: BigDecimal,
     uom: String,
-//                      time: DateTime,
     source: String,
     sensor: String
   )
@@ -34,7 +33,21 @@ package models
 
     def insert(reading: Reading): Option[Long] = {
       val id: Option[Long] = DB.withConnection { implicit c =>
-        SQL("insert into reading (value, uom, source, sensor, time) values ({value}, {uom}, {source}, {sensor}, NOW())")
+        SQL(
+          """
+            |INSERT INTO `zoe`.`reading`
+            |(
+            |`value`,
+            |`uom_id`,
+            |`created_on`,
+            |`source_id`,
+            |`sensor_id`)
+            |SELECT {value}, uom.id, NOW(), source.id, sensor.id
+            |FROM  `zoe`.`uom`
+            |JOIN `zoe`.`source` ON `source`.`name` = {source}
+            |JOIN `zoe`.`sensor` ON `sensor`.`name` = {sensor}
+            |WHERE `uom`.`name` = {uom}
+          """.stripMargin)
           .on("value" -> reading.value.bigDecimal,
               "uom" -> reading.uom,
               "source" -> reading.source,
@@ -44,8 +57,6 @@ package models
       id
     }
 
-
-    import play.api.libs.json.Json
     import play.api.libs.json._
 
   implicit object ReadingFormat extends Format[Reading] {
@@ -56,7 +67,6 @@ package models
         "id" -> JsNumber(reading.id),
         "value" -> JsNumber(reading.value),
         "uom" -> JsString(reading.uom),
-        //      "time" -> JsString(reading.time.toString),
         "source" -> JsString(reading.source),
         "sensor" -> JsString(reading.sensor)
       )
@@ -67,7 +77,6 @@ package models
       val id = (json \ "id").as[Long]
       val value = (json \ "value").as[BigDecimal]
       val uom = (json \ "uom").as[String]
-      //      (json \ "time").as[DateTime]
       val source = (json \ "source").as[String]
       val sensor = (json \ "sensor").as[String]
       JsSuccess(Reading(id, value, uom, source, sensor))
