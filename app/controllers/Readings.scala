@@ -13,15 +13,17 @@ object Readings extends Controller {
   val readingForm: Form[Reading] = Form(
   mapping(
     "value" -> bigDecimal,
-    "uom" -> nonEmptyText,
-    "source" -> nonEmptyText,
-    "sensor" -> nonEmptyText
+    "uom" -> text,
+    "source" -> text,
+    "sensor" -> text
   )
     ((value, uom, source, sensor) => Reading(0, value, uom, source, sensor))
     ((r: Reading) => Some(r.value, r.uom, r.source, r.sensor))
   )
 
   def create = Action { implicit request =>
+    play.api.Logger.info(request.uri)
+    play.api.Logger.info(request.body.toString)
     readingForm.bindFromRequest.fold(
       errors => {
         Ok(Json.toJson(Map("success" -> toJson(false), "id" -> toJson(0))))
